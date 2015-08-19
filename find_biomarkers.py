@@ -142,10 +142,10 @@ X_cv_train = X_alltr.loc[:,gene_list_in_common]
 X_sep_test = X_val.loc[:,gene_list_in_common]
 y_cv_train = y_alltr.copy()
 
-y_cv_train[y_cv_train == 2] = 0
-y_sep_test[y_sep_test == 2] = 0
 y_cv_train = y_cv_train.values.flatten()
 y_sep_test = y_val.values.flatten()
+y_cv_train[y_cv_train == 2] = 0
+y_sep_test[y_sep_test == 2] = 0
 
 X_train = X_cv_train
 X_test = X_sep_test
