@@ -23,7 +23,6 @@ def combine_row(l1, l2):
     l = l1.append(l2, ignore_index = True)
     return(l)
 
-# split the data into training and testing while keeping the ratio of two categories
 def train_test_equal_split(X_1, X_2, y_1, y_2, test_ratio, rand_seed_number):
     X_train1, X_test1, y_train1, y_test1 = cv.train_test_split(X_1, y_1, test_size=test_ratio, random_state=rand_seed_number)
     X_train2, X_test2, y_train2, y_test2 = cv.train_test_split(X_2, y_2, test_size=test_ratio, random_state=rand_seed_number)
@@ -36,17 +35,26 @@ def train_test_equal_split(X_1, X_2, y_1, y_2, test_ratio, rand_seed_number):
     return(X_train, X_test, y_train, y_test)
 
 ## 1.0 read gene expression matrix and metadata, then combine them
-raw_matrix = pd.DataFrame.from_csv('GDS4971/GDS4971.soft2', sep='\t')
-no_null_matrix = raw_matrix[raw_matrix != 'null'].dropna(how='any').T # d1
-gene_map = pd.DataFrame.from_csv('GDS4971/probe_gene_map.txt', sep='\t', header = None)
-raw_matrix_gene = pd.concat([raw_matrix[raw_matrix != 'null'].dropna(how='any'), gene_map], axis = 1).dropna(how = 'any')
-raw_matrix_gene = raw_matrix_gene.set_index('IDENTIFIER')
-raw_matrix_gene = raw_matrix_gene.iloc[:-1,:-1]
+print("Step 1")
+raw_matrix = pd.read_csv('GDS4971/GDS4971_full.soft', sep='\t', na_values=['null'])
+idx = [('GSM' in x or x=='IDENTIFIER') for x in raw_matrix.columns]
+raw_matrix = raw_matrix.ix[:,idx]
+no_null_matrix = raw_matrix.dropna(how='any').T # d1
 
+#idx = [(x=='ID_REF' or x=='IDENTIFIER') for x in raw_matrix.columns]
+#raw_matrix_gene = raw_matrix.ix[:,idx]
+#raw_matrix_gene = raw_matrix_gene.dropna(how='any')
+#raw_matrix_gene = raw_matrix_gene.set_index('IDENTIFIER')
+#raw_matrix_gene = raw_matrix_gene.iloc[:-1,:-1]
+#print raw_matrix_gene
+#exit()
+
+no_null_matrix = no_null_matrix.T.set_index('IDENTIFIER')
 raw_metadata = pd.DataFrame.from_csv('GDS4971/GDS4971.tsv', sep='\t')
-raw_combined_matrix = pd.concat([raw_metadata, raw_matrix_gene.T], axis = 1)
+raw_combined_matrix = pd.concat([raw_metadata, no_null_matrix.T], axis = 1)
 
 ## 2.0 Label the three categories of sepsis patients. Then focus on survivors and non-survivors only.
+print("Step 2")
 all_matrix = raw_combined_matrix.copy()
 condition = all_matrix['group_day'].str.contains('^S_D')
 all_matrix.loc[condition, 'class'] = 1
@@ -63,6 +71,7 @@ y_class_1 = allday_matrix[label == 1].iloc[:,-1]
 y_class_2 = allday_matrix[label == 2].iloc[:,-1]
 
 ## 3.0 Split the whole data into training and validation
+print("Step 3")
 X_alltr, X_val, y_alltr, y_val = train_test_equal_split(X_class_1, X_class_2, y_class_1, y_class_2, 0.33, 15)
 y_alltr.columns = ['class']
 X_alltr_1 = X_alltr[y_alltr['class'] == 1]
@@ -72,13 +81,15 @@ y_alltr_2 = y_alltr[y_alltr['class'] == 2]
 
 ## 4.0 Among the training data, perform 5-fold cross validation.
 ## The concensus top 500 genes with p-value < 0.001 are the biomarkers.
+print("Step 4")
 gene_list = {}
 gene_F = {}
-cv_fold = 5
+# Set to 1 to just find the top 500 genes
+cv_fold = 1
 n_features_selected = 500
 for i in range(1, cv_fold+1):
     print i
-    X_tr, X_te, y_tr, y_te = train_test_equal_split(X_alltr_1, X_alltr_2, y_alltr_1, y_alltr_2, 1.0/cv_fold, i)
+    X_tr, X_te, y_tr, y_te = train_test_equal_split(X_alltr_1, X_alltr_2, y_alltr_1, y_alltr_2, 0, i)
     X_tr.columns = X_class_1.columns
     X_tr_f = X_tr.iloc[:,32:]
     y_tr_f = y_tr.iloc[:,:].values.flatten()
@@ -126,15 +137,17 @@ for i in range(1, cv_fold+1):
     plt.show()
 
 ## 5.0 Find the consensus genes 
+print("Step 5")
 gene_list_in_common = []
 for key in gene_list:
     if gene_list[key] == cv_fold:
         gene_list_in_common.append(key)  
-
+print len(gene_list.keys())
 pd.Series(gene_list_in_common).to_csv('d1_final_gene_list_in_common_' + str(n_features_selected) + '.csv')
 
 ## 6.0 Use expressions of these consensus genes as features to train model in cross validation
 ## cross validation in the training dataset firstly
+print("Step 6")
 X_alltr.columns = X_class_1.columns
 X_val.columns = X_class_1.columns
 
@@ -173,6 +186,7 @@ print "Independent f1 score", f1_score(y_test, y_pred)
 
 ## 7.0 Plot ROC curve
 # Compute roc and auc
+print("Step 7")
 probas_ = crossclf.predict_proba(X_test)
 print probas_
 print y_test
@@ -190,13 +204,13 @@ print "The confusion matrix:"
 print cm
 
 # Plot roc curve
-pl.clf()
-pl.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
-pl.plot([0, 1], [0, 1], 'k--')
-pl.xlim([0.0, 1.0])
-pl.ylim([0.0, 1.0])
-pl.xlabel('False Positive Rate')
-pl.ylabel('True Positive Rate')
-pl.title('Receiver operating characteristic')
-pl.legend(loc="lower right")
-pl.show()
+plt.clf()
+plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.0])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic')
+plt.legend(loc="lower right")
+plt.show()
