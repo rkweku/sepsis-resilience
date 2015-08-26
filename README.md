@@ -1,12 +1,15 @@
 # sepsis-resilience
-======== Description ========
+
+Description
+==============
 This project is done by Jing Tong (Computational Biology Ph.D. student at
 University of Texas Southwestern Medical Center) during Insight health data
 science progrom in July 2015. Collaberated with Sage Bionetworks to find the
 important factors for sepsis resilience.
 
 
-======== Requirements ========
+Requirements
+==============
 findBiomarkers requires the following python libraries to perform properly:
 matplotlib - http://matplotlib.org/index.html
 numpy - http://www.numpy.org/
@@ -16,17 +19,20 @@ sklearn - http://scikit-learn.org/stable/
 These may easily be installed using (Python) PIP. Intructions to install PIP -
 https://pip.pypa.io/en/stable/installing.html
 
-======== Execution ========
+Execution
+==============
 Executing findBiomarkers.py requires the user to input a few execution
 variables within the script itself for a successful execution. The variables
 are listed below with a description of what they are.
 
-========== Notes ==========
+Notes
+==============
 There are two findBiomarkers scripts in this repository. Retained version 1
 which jing wrote, but version 2 is the working version. All documentation
 in this file refer to getting this code to work for version 2.
 
-======= Arguments ========
+Arguments
+==============
 expressionDataFilename		Path and name of the series matrix file. Can be
 ...				downloaded directly from the data series
 ...				link on GEO.
@@ -50,7 +56,5 @@ groupTwoDict			The name of the second group type being
 ...				what is contained within the '' in the
 ...				brackets). Case sensitive so ensure it matches
 ...				exactly what is in the metadata file.
-outputFileanem			Path and name of the file to output the common
+outputFilename			Path and name of the file to output the common
 ...				gene list to.
-
-
