@@ -25,7 +25,10 @@ are listed below with a description of what they are.
 ##Notes
 There are two findBiomarkers scripts in this repository. Retained version 1  
 which jing wrote, but version 2 is the working version. All documentation  
-in this file refer to getting this code to work for version 2
+in this file refer to getting this code to work for version 2.
+
+Placeholders for the arguments have been left to remain so that future users
+can have clear examples of what belongs where.
 
 ##Arguments
 **expressionDataFilename:** Path and name of the series matrix file. Can be  
